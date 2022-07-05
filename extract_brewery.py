@@ -39,7 +39,7 @@ def get_random_brewery():
     return(headers,txt_dict)
 
 def create_csv():
-    print('hahaha')
+    print('haha')
     
 def does_filepath_exist(str_path):
     path=Path(str_path)
