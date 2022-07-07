@@ -2,17 +2,25 @@ import json
 import csv
 import requests
 import os
+import boto3
 from pathlib import Path
 import pandas as pd
+
 
 def main():
     api_reached_bool=contact_api()
     if(api_reached_bool==True):
-        brewery_data=get_random_brewery()
+        # non_dupe_bool=False
+        # while(non_dupe_bool==False):
+            brewery_data=get_random_brewery()
     if(does_filepath_exist('./data')==False):
         os.mkdir('./data')
     if(does_filepath_exist('./data/id_lookup.csv')==False):
-        create_csv(brewery_data)
+        print('File not found - creating id_lookup.csv')
+        create_id_csv()
+    else:
+        print('File found - id_lookup.csv')
+    create_data_csv(brewery_data)
 
 def contact_api():
     url='https://api.openbrewerydb.org/breweries'
@@ -26,6 +34,11 @@ def contact_api():
     except:
         print('API connectivity not found!') # Real logging would be nice here
 
+def get_html_request(url):
+    r=requests.get(url)
+
+    return r
+
 def get_random_brewery():
     url='https://api.openbrewerydb.org/breweries/random'
     r=get_html_request(url)
@@ -38,9 +51,13 @@ def get_random_brewery():
     
     return(headers,txt_dict)
 
-def create_csv():
-    print('haha')
-    
+def check_brewery_duplicate(id):
+    df=pd.read_csv('./data/id_lookup.csv')
+    if(df['id'].isin(['id']).empty):
+        return False
+    else:
+        return True
+
 def does_filepath_exist(str_path):
     path=Path(str_path)
     if(path.exists()):
@@ -49,9 +66,33 @@ def does_filepath_exist(str_path):
     else:
         return False
 
-def get_html_request(url):
-    r=requests.get(url)
+def create_id_csv():
+    id_str=['id']
+    f=open('./data/id_lookup.csv','w')
+    writer=csv.writer(f)
+    writer.writerow(id_str)
+    f.close()
 
-    return r
+def append_id_csv(id):
+    id_str=[id]
+    # id_str.append(id)
+    f=open('./data/id_lookup.csv','a+')
+    writer=csv.writer(f)
+    writer.writerow(id_str)
+    f.close()
+
+def create_data_csv(brewery_data):
+    headers=brewery_data[0]
+    brew_dict=brewery_data[1]
+    data_row=[]
+    
+    append_id_csv(brew_dict['id'])
+
+    for key in headers:
+        data_row.append(brew_dict[key])
+
+    
+
+
 
 main()
